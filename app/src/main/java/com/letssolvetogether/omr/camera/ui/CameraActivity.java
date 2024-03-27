@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -42,6 +41,8 @@ import com.letssolvetogether.omr.utils.AnswersUtils;
 import com.letssolvetogether.omr.utils.PrereqChecks;
 
 import org.opencv.android.OpenCVLoader;
+
+import java.util.Objects;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -80,8 +81,6 @@ public class CameraActivity extends AppCompatActivity implements
     private OMRSheet omrSheet;
     private static int blurImagesCount;
     private static int lowBrightnessImagesCount;
-    private static String BLUR_IMAGE = "Blur Image";
-    private static String LOW_BRIGHTNESS = "Low Brightness";
 
     private int noOfQuestions;
 
@@ -127,10 +126,11 @@ public class CameraActivity extends AppCompatActivity implements
      * while interacting with activity UI.
      */
     private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
+        @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (AUTO_HIDE) {
-                delayedHide(AUTO_HIDE_DELAY_MILLIS);
+                delayedHide();
             }
             return false;
         }
@@ -150,7 +150,7 @@ public class CameraActivity extends AppCompatActivity implements
 
         setContentView(R.layout.activity_camera);
 
-        noOfQuestions = getIntent().getExtras().getInt("noOfQuestions");
+        noOfQuestions = Objects.requireNonNull(getIntent().getExtras()).getInt("noOfQuestions");
 
         loadCorrectAnswers();
 
@@ -164,6 +164,7 @@ public class CameraActivity extends AppCompatActivity implements
         }
         //hide();
         // Set up the user interaction to manually show or hide the system UI.
+        assert mCameraView != null;
         mCameraView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -204,17 +205,19 @@ public class CameraActivity extends AppCompatActivity implements
                 SharedPreferences.Editor editor = settings.edit();
 
                 editor.putString("skipMessage", checkBoxResult);
-                editor.commit();
+                editor.apply();
 
                 return;
             }
         });
 
+        assert skipMessage != null;
         if (!skipMessage.equals("checked")) {
             dialogTips.show();
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     private void loadCorrectAnswers(){
 
         omrSheet = ViewModelProviders.of(this, new OMRSheetViewModelFactory(20, 0, 0)).get(OMRSheet.class);
@@ -224,6 +227,7 @@ public class CameraActivity extends AppCompatActivity implements
 
         final String[] strCorrectAnswers = new String[1];
         new AsyncTask<Void, Void, Void>() {
+            @SuppressLint("StaticFieldLeak")
             @Override
             protected Void doInBackground(Void... voids) {
                     if (db.omrKeyDao().findById(noOfQuestions) != null) {
@@ -288,11 +292,7 @@ public class CameraActivity extends AppCompatActivity implements
     protected void onDestroy() {
         super.onDestroy();
         if (mBackgroundHandler != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                mBackgroundHandler.getLooper().quitSafely();
-            } else {
-                mBackgroundHandler.getLooper().quit();
-            }
+            mBackgroundHandler.getLooper().quitSafely();
             mBackgroundHandler = null;
         }
     }
@@ -300,17 +300,13 @@ public class CameraActivity extends AppCompatActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_CAMERA_PERMISSION:
-                if (permissions.length != 1 || grantResults.length != 1) {
-                    throw new RuntimeException("Error on requesting camera permission.");
-                }
-                if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-//                    Toast.makeText(this, R.string.camera_permission_not_granted,
-//                            Toast.LENGTH_SHORT).show();
-                }
-                // No need to start camera here; it is handled by onResume
-                break;
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (permissions.length != 1 || grantResults.length != 1) {
+                throw new RuntimeException("Error on requesting camera permission.");
+            }
+            //                    Toast.makeText(this, R.string.camera_permission_not_granted,
+            //                            Toast.LENGTH_SHORT).show();
+            // No need to start camera here; it is handled by onResume
         }
     }
 
@@ -352,9 +348,9 @@ public class CameraActivity extends AppCompatActivity implements
      * Schedules a call to hide() in delay milliseconds, canceling any
      * previously scheduled calls.
      */
-    private void delayedHide(int delayMillis) {
+    private void delayedHide() {
         mHideHandler.removeCallbacks(mHideRunnable);
-        mHideHandler.postDelayed(mHideRunnable, delayMillis);
+        mHideHandler.postDelayed(mHideRunnable, CameraActivity.AUTO_HIDE_DELAY_MILLIS);
     }
 
     private Handler getBackgroundHandler() {
@@ -366,7 +362,7 @@ public class CameraActivity extends AppCompatActivity implements
         return mBackgroundHandler;
     }
 
-    private CameraView.Callback mCallback
+    private final CameraView.Callback mCallback
             = new CameraView.Callback() {
 
         @Override
@@ -404,6 +400,7 @@ public class CameraActivity extends AppCompatActivity implements
             }
             if(blurImagesCount > 10){
                 blurImagesCount = 0;
+                String BLUR_IMAGE = "Blur Image";
                 displayToast(BLUR_IMAGE, 1000);
             }
 
@@ -412,6 +409,7 @@ public class CameraActivity extends AppCompatActivity implements
             }
             if(lowBrightnessImagesCount > 10) {
                 lowBrightnessImagesCount = 0;
+                String LOW_BRIGHTNESS = "Low Brightness";
                 displayToast(LOW_BRIGHTNESS, 1000);
             }
 
@@ -467,7 +465,8 @@ public class CameraActivity extends AppCompatActivity implements
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final Bundle args = getArguments();
-            return new AlertDialog.Builder(getActivity())
+            assert args != null;
+            return new AlertDialog.Builder(Objects.requireNonNull(getActivity()))
                     .setMessage(args.getInt(ARG_MESSAGE))
                     .setPositiveButton(android.R.string.ok,
                             new DialogInterface.OnClickListener() {
@@ -477,7 +476,7 @@ public class CameraActivity extends AppCompatActivity implements
                                     if (permissions == null) {
                                         throw new IllegalArgumentException();
                                     }
-                                    ActivityCompat.requestPermissions(getActivity(),
+                                    ActivityCompat.requestPermissions(Objects.requireNonNull(getActivity()),
                                             permissions, args.getInt(ARG_REQUEST_CODE));
                                 }
                             })

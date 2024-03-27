@@ -5,9 +5,10 @@ buildscript {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.1'
+        classpath 'com.android.tools.build:gradle:7.1.1'
         
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -18,6 +19,9 @@ buildscript {
 allprojects {
     repositories {
         google()
+        maven {
+            url 'https://jitpack.io'
+        }
         jcenter()
         flatDir {
             dirs 'src/main/libs'
@@ -30,9 +34,9 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion = 29
+    compileSdkVersion = 33
     minSdkVersion = 21
-    targetSdkVersion = 29
+    targetSdkVersion = 33
     appcompat = "1.1.0"
     legacySupport = "1.0.0"
     materialVersion = "1.1.0"

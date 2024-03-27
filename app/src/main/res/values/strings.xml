@@ -16,7 +16,7 @@
 
     <!-- OMR Sheet Types -->
     <string name="twenty">20</string>
-    <string name="hundred">100</string>
+    <string name="hundred">50</string>
 
     <!-- OMR Key -->
     <string name="title_answer_key">Answer Key</string>
