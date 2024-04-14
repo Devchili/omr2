@@ -8,7 +8,8 @@
 
     <!-- dot's active color -->
     <color name="dot_dark">#d1395c</color>
-
+    <color name="green">#00FF00</color>
+    <color name="red">#FF0000</color>
     <!-- dot's inactive color -->
     <color name="dot_light">#f98da5</color>
 

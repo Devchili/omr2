@@ -1,20 +1,18 @@
 package com.letssolvetogether.omr;
 
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.text.InputType;
+import androidx.appcompat.app.AlertDialog;
 import android.util.Log;
-import android.widget.EditText;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.cameraview.CameraView;
 import com.letssolvetogether.omr.detection.DetectionUtil;
@@ -28,6 +26,8 @@ import com.letssolvetogether.omr.utils.PrereqChecks;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.util.List;
+
 public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
     private static String TAG = "ProcessOMRSheetAsyncTask";
@@ -37,6 +37,7 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
     private Bitmap bmpOMRSheet;
     private Mat matOMR;
     private CameraView mCameraView;
+
     private LinearLayout linearLayout;
     private ImageView iv;
     private DetectionUtil detectionUtil;
@@ -44,12 +45,12 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
     private byte[][] studentAnswers;
     private int score;
 
-    private boolean isDetectionPaused = false; // Flag to track if detection is paused
-    private boolean isDialogOpen = false; // Flag to track if a dialog box is open
+    private DatabaseHelper databaseHelper;
 
-    public ProcessOMRSheetAsyncTask(CameraView mCameraView, OMRSheet omrSheet) {
+    public ProcessOMRSheetAsyncTask(CameraView mCameraView, OMRSheet omrSheet, DatabaseHelper databaseHelper) {
         this.omrSheet = omrSheet;
         this.mCameraView = mCameraView;
+        this.databaseHelper = databaseHelper;
 
         detectionUtil = new DetectionUtil(omrSheet);
         prereqChecks = new PrereqChecks();
@@ -66,12 +67,9 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
         bmpOMRSheet = this.mCameraView.getPreviewFrame();
 
-        if (isDetectionPaused || isDialogOpen) { // Pause detection if a dialog is open or detection is paused
-            return false;
-        }
-
         boolean isBlurry = prereqChecks.isBlurry(bmpOMRSheet);
         if (isBlurry) {
+            mCameraView.requestPreviewFrame();
             return false;
         }
 
@@ -84,9 +82,8 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
     @Override
     protected void onPostExecute(Boolean result) {
         Log.i(TAG, "onPostExecute");
-        if (!result || omrSheetCorners == null || isDialogOpen) { // Pause detection if result is false, corners are null, or a dialog is open
-            mCameraView.requestPreviewFrame(); // Resume scanning
-            return;
+        if (omrSheetCorners == null) {
+            mCameraView.requestPreviewFrame();
         } else {
             omrSheet.setMatOMRSheet(matOMR);
             omrSheet.setWidth(matOMR.cols());
@@ -96,8 +93,7 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
             Mat roiOfOMR = detectionUtil.findROIofOMR(omrSheet);
             if (matOMR == null) {
-                mCameraView.requestPreviewFrame(); // Resume scanning
-                return;
+                mCameraView.requestPreviewFrame();
             }
             omrSheet.setMatOMRSheet(roiOfOMR);
 
@@ -108,16 +104,16 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
             try {
                 studentAnswers = detectionUtil.getStudentAnswers(roiOfOMR);
             } catch (UnsupportedCameraResolutionException e) {
-                AlertDialog.Builder dialogUnsupportedCameraResolution = new AlertDialog.Builder(mCameraView.getContext());
+                AlertDialog.Builder dialogUnsupporteCameraResolution = new AlertDialog.Builder(mCameraView.getContext());
 
-                dialogUnsupportedCameraResolution.setMessage("The Camera resolution " + roiOfOMR.rows() + "x" + matOMR.cols() + " is not supported by OMR Checker.\nPlease take a screenshot and send an email to shreyaspatel29@gmail.com");
-                dialogUnsupportedCameraResolution.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                dialogUnsupporteCameraResolution.setMessage("The Camera resolution " + roiOfOMR.rows() + "x" + matOMR.cols() + " is not supported by OMR Checker.\nPlease take a screenshot and send an email to shreyaspatel29@gmail.com");
+                dialogUnsupporteCameraResolution.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 
                     }
                 });
-                dialogUnsupportedCameraResolution.show();
+                dialogUnsupporteCameraResolution.show();
                 return;
             }
 
@@ -133,98 +129,81 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
             textView.setTextColor(Color.BLACK);
             textView.setTextSize(30);
 
-            // Set OMR Sheet to be displayed in dialog
+            // Set OMR Sheet to be displayed in the dialog
             iv.setImageBitmap(omrSheet.getBmpOMRSheet());
 
             dialogOMRSheetDisplay.setCustomTitle(textView);
             dialogOMRSheetDisplay.setView(linearLayout);
-            dialogOMRSheetDisplay.setNeutralButton("Go for next OMR", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dlg, int sumthin) {
-                    mCameraView.requestPreviewFrame(); // Resume scanning
-                }
-            });
-
-            // Initialize SharedPreferences
-            final SharedPreferences sharedPreferences = mCameraView.getContext().getSharedPreferences("OMR_PREFERENCES", Context.MODE_PRIVATE);
-
-            // Set Save button and its onClickListener
-            dialogOMRSheetDisplay.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+            dialogOMRSheetDisplay.setPositiveButton("Save Score", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    // Pause detection when "Save" is clicked
-                    isDialogOpen = true;
-                    isDetectionPaused = true;
-
-                    // Show the quiz selection dialog first
-                    final CharSequence[] items = {"Quiz 1", "Quiz 2", "Quiz 3", "Quiz 4", "Quiz 5"};
-                    AlertDialog.Builder quizSelectionDialog = new AlertDialog.Builder(mCameraView.getContext());
-                    quizSelectionDialog.setTitle("Select Quiz");
-                    quizSelectionDialog.setItems(items, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // Get selected quiz
-                            final String selectedQuiz = "Quiz " + (which + 1);
-
-                            // Build a dialog to get student name
-                            final AlertDialog.Builder studentNameDialog = new AlertDialog.Builder(mCameraView.getContext());
-                            final EditText input = new EditText(mCameraView.getContext());
-                            input.setInputType(InputType.TYPE_CLASS_TEXT);
-                            studentNameDialog.setView(input);
-                            studentNameDialog.setTitle("Enter Student Name");
-
-                            // Set OK button
-                            studentNameDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    String studentName = input.getText().toString();
-                                    String scoreRecord = selectedQuiz + " - " + studentName + " : " + score;
-                                    // Retrieve existing data from SharedPreferences
-                                    String existingData = sharedPreferences.getString("StudentScores", "");
-                                    // Append the new student name and score
-                                    String newData = existingData + ";" + scoreRecord;
-                                    // Save the updated data back to SharedPreferences
-                                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                                    editor.putString("StudentScores", newData);
-                                    editor.apply();
-                                    Toast.makeText(mCameraView.getContext(), "Student name and score saved!", Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                    isDialogOpen = false; // Resume detection
-                                    isDetectionPaused = false; // Resume detection
-                                    mCameraView.requestPreviewFrame(); // Resume scanning
-                                }
-                            });
-
-                            // Set Cancel button
-                            studentNameDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.cancel();
-                                    isDialogOpen = false; // Resume detection
-                                    isDetectionPaused = false; // Resume detection
-                                    mCameraView.requestPreviewFrame(); // Resume scanning
-                                }
-                            });
-
-                            // Show the student name input dialog
-                            studentNameDialog.show();
-                        }
-                    });
-                    // Show the quiz selection dialog
-                    quizSelectionDialog.show();
+                    // Show dialog to select classroom
+                    showClassroomSelectionDialog();
                 }
             });
-
-            dialogOMRSheetDisplay.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialogInterface) {
-                    isDialogOpen = false; // Resume detection
-                    isDetectionPaused = false; // Resume detection
-                    mCameraView.requestPreviewFrame(); // Resume scanning
+            dialogOMRSheetDisplay.setNeutralButton("Go for next OMR", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dlg, int sumthin) {
+                    mCameraView.requestPreviewFrame();
                 }
             });
 
             dialogOMRSheetDisplay.show();
             Log.i(TAG, "DONE");
         }
+    }
+
+
+
+    private void showClassroomSelectionDialog() {
+        // Fetch classrooms from database
+        final List<ClassroomBlock> classrooms = databaseHelper.getAllClassrooms();
+
+        // Show dialog to select classroom
+        AlertDialog.Builder builder = new AlertDialog.Builder(mCameraView.getContext());
+        builder.setTitle("Select Classroom");
+        CharSequence[] items = new CharSequence[classrooms.size()];
+        for (int i = 0; i < classrooms.size(); i++) {
+            items[i] = classrooms.get(i).getName();
+        }
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                final ClassroomBlock selectedClassroom = classrooms.get(which);
+                // Show dialog to select student
+                showStudentSelectionDialog(selectedClassroom);
+            }
+        });
+        builder.show();
+    }
+
+    private void showStudentSelectionDialog(final ClassroomBlock classroom) {
+        // Fetch students for the selected classroom from database
+        final List<String> studentNames = databaseHelper.getStudentsForClassroom(classroom.getId());
+
+        // Show dialog to select student
+        AlertDialog.Builder builder = new AlertDialog.Builder(mCameraView.getContext());
+        builder.setTitle("Select Student");
+        CharSequence[] items = new CharSequence[studentNames.size()];
+        for (int i = 0; i < studentNames.size(); i++) {
+            items[i] = studentNames.get(i);
+        }
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String selectedStudent = studentNames.get(which);
+                // Save score for the selected student
+                saveScoreForStudent(classroom.getName(), selectedStudent, score);
+            }
+        });
+        builder.show();
+    }
+
+    private void saveScoreForStudent(String classroomName, String studentName, int score) {
+        // Save score for the student in the specified classroom
+        databaseHelper.saveScore(classroomName, studentName, score);
+
+        // Display a toast message confirming the successful saving of the score
+        String message = "Score saved for student: " + studentName + " in classroom: " + classroomName;
+        Toast.makeText(mCameraView.getContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

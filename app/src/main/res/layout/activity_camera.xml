@@ -17,13 +17,24 @@
         android:keepScreenOn="true">
 
         <FrameLayout
-            android:layout_marginTop="100dp"
             android:layout_width="407dp"
             android:layout_height="match_parent"
+            android:layout_marginTop="100dp"
             android:fitsSystemWindows="true">
 
         </FrameLayout>
     </com.google.android.cameraview.CameraView>
+
+    <!-- Button to trigger OMR sheet detection -->
+
+    <!-- Placeholder for additional controls -->
+    <Button
+        android:id="@+id/btnDetect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="200dp"
+        android:layout_gravity="center"
+        android:text="Detect OMR Sheet" />
 
     <LinearLayout
         android:id="@+id/fullscreen_content_controls"
@@ -36,6 +47,5 @@
         tools:ignore="UselessParent">
 
     </LinearLayout>
-
 
 </FrameLayout>

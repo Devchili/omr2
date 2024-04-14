@@ -1,0 +1,49 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    tools:context="com.letssolvetogether.omr.Class">
+
+    <EditText
+        android:id="@+id/edit_text_classroom_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Classroom Name"
+        android:inputType="text"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btn_add_classroom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Classroom"
+        android:textColor="@android:color/white"
+        android:background="@color/colorPrimary"
+        android:textSize="16sp"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:layout_below="@id/edit_text_classroom_name"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/btn_add_classroom">
+
+        <LinearLayout
+            android:id="@+id/list_view_classrooms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"/>
+
+    </ScrollView>
+
+</RelativeLayout>

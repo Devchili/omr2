@@ -1,6 +1,8 @@
 package com.letssolvetogether.omr.omrkey.ui;
 
 import androidx.room.Room;
+
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -143,6 +145,7 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
         }.execute();
     }
 
+    @SuppressLint("StaticFieldLeak")
     public void storeCorrectAnswers(int noOfQuestions){
         correctAnswers = new int[noOfQuestions];
         int cnt = -1;

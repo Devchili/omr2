@@ -4,6 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.letssolvetogether.omr.Quiz1">
+    tools:context="com.letssolvetogether.omr.ViewDatabaseContentsActivity">
 
+
+    <ListView
+        android:id="@+id/list_view_database_contents"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

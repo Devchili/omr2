@@ -26,17 +26,5 @@
             android:layout_height="@dimen/img_width_height"
             app:srcCompat="@drawable/tutorial_image_1" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:autoLink="web"
-            android:linksClickable="true"
-            android:paddingLeft="@dimen/desc_padding"
-            android:paddingRight="@dimen/desc_padding"
-            android:text="@string/slide_1_desc"
-            android:textAlignment="center"
-            android:textColor="@color/colorPrimary"
-            android:textSize="@dimen/slide_desc" />
-
-    </LinearLayout>
+</LinearLayout>
 </RelativeLayout>

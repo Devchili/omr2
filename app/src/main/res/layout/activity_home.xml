@@ -33,15 +33,28 @@
         android:textSize="40sp" />
 
     <Button
-        android:id="@+id/button_next_activity"
+        android:id="@+id/button_class"
         android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:layout_below="@id/button_scan"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/colorPrimaryDark"
-        android:text="RESULTS"
+        android:text="CLASS"
         android:textColor="#E5E6EF"
         android:textSize="40sp" />
+
+    <Button
+        android:id="@+id/button_db"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/button_class"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:text="Result"
+        android:textColor="#E5E6EF"
+        android:textSize="40sp" />
+
 
 </RelativeLayout>

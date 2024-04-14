@@ -64,5 +64,7 @@
 
     <string name="slide_4_title">Get Score</string>
     <string name="slide_4_desc"></string>
+    <string name="blur_image">blurred image</string>
+    <string name="low_brightness">low brightness\n</string>
 
 </resources>
