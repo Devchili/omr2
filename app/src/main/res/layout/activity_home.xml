@@ -28,7 +28,7 @@
         android:layout_below="@id/button_answerkey"
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/colorPrimaryDark"
-        android:text="Scan OMR Key"
+        android:text="Scan Exam"
         android:textColor="#E5E6EF"
         android:textSize="40sp" />
 

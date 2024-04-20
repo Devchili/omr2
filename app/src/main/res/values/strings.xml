@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OMR Checker</string>
+    <string name="app_name">Exam Checker</string>
 
     <string name="camera_permission_confirmation">This app require permission to access camera for scanning OMR Sheet.</string>
     <string name="camera_permission_not_granted">This app cannot do anything without camera permission.</string>
