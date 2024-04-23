@@ -43,6 +43,61 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    @SuppressLint("Range")
+    public List<ClassroomBlock> getAllClassroomsSortedByNameAscending() {
+        List<ClassroomBlock> classrooms = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_CLASSROOM + " ORDER BY " + KEY_NAME + " ASC";
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                ClassroomBlock classroom = new ClassroomBlock();
+                classroom.setId(cursor.getLong(cursor.getColumnIndex(KEY_ID)));
+                classroom.setName(cursor.getString(cursor.getColumnIndex(KEY_NAME)));
+                classrooms.add(classroom);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+
+        return classrooms;
+    }
+
+    public List<String> getStudentsForClassroomSortedByNameAscending(long classroomId) {
+        List<String> studentNames = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] projection = {KEY_NAME};
+        String selection = KEY_CLASSROOM_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(classroomId)};
+        String orderBy = KEY_NAME + " ASC";
+
+        Cursor cursor = db.query(TABLE_STUDENT, projection, selection, selectionArgs, null, null, orderBy);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                @SuppressLint("Range") String studentName = cursor.getString(cursor.getColumnIndex(KEY_NAME));
+                studentNames.add(studentName);
+            }
+            cursor.close();
+        }
+
+        db.close();
+
+        return studentNames;
+    }
+
+    public void deleteStudent(long classroomId, String studentName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_STUDENT, KEY_CLASSROOM_ID + " = ? AND " + KEY_NAME + " = ?",
+                new String[]{String.valueOf(classroomId), studentName});
+        db.close();
+    }
+
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {

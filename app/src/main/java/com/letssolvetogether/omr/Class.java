@@ -51,7 +51,7 @@ public class Class extends AppCompatActivity {
     }
 
     private void loadClassroomsFromDatabase() {
-        List<ClassroomBlock> classrooms = dbHelper.getAllClassrooms();
+        List<ClassroomBlock> classrooms = dbHelper.getAllClassroomsSortedByNameAscending();
         for (ClassroomBlock classroom : classrooms) {
             // Check if the classroom is not already added
             if (!classroomViews.containsKey(classroom.getId())) {
@@ -59,6 +59,7 @@ public class Class extends AppCompatActivity {
             }
         }
     }
+
 
     private void addClassroomBlockToUI(ClassroomBlock classroom) {
         Button btnClassroom = new Button(this);
