@@ -46,4 +46,15 @@
             android:layout_height="wrap_content" />
     </ScrollView>
 
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:onClick="onSubmitButtonClick"
+        android:text="Submit"
+        tools:layout_editor_absoluteX="323dp"
+        tools:layout_editor_absoluteY="0dp" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

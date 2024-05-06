@@ -20,8 +20,8 @@ public class OMRSheet extends ViewModel {
     private OMRSheetBlock omrSheetBlock;
 
     private int numberOfQuestions;
-    private int optionsPerQuestions = 5;
-    private int questionsPerBlock = 10;
+    private int optionsPerQuestions = 4;
+    private int questionsPerBlock = 25;//25
     private int widthOfBoundingSquareForCircle;
 
     private int requiredBlackPixelsInBoundingSquare;
@@ -73,34 +73,33 @@ public class OMRSheet extends ViewModel {
         int h = getHeight();
 
         omrSheetBlock = new OMRSheetBlock();
+        omrSheetBlock.setBlockWidth((int)(w/6.2));//original 6.0
+        omrSheetBlock.setBlockHeight((int)(h/4.0));//original 5.0//
 
-        omrSheetBlock.setBlockWidth((int)(w/3.2));
-        omrSheetBlock.setBlockHeight((int)(h/1.39));
+        Log.i(TAG,"BlockWidth - " + (int)(w/6.2));
+        Log.i(TAG,"BlockHeight - " + (int)(h/4.0));
 
-        Log.i(TAG,"BlockWidth - " + (int)(w/3.2));
-        Log.i(TAG,"BlockHeight - " + (int)(h/1.39));
+        omrSheetBlock.setxFirstBlockOffset((int)(w/4.5));//original 8.0
+        omrSheetBlock.setyFirstBlockOffset((int)(h/5.5));//original 5.0
 
-        omrSheetBlock.setxFirstBlockOffset((int)(w/6.1));
-        omrSheetBlock.setyFirstBlockOffset((int)(h/2.7));
+        Log.i(TAG,"xFirstBlockOffset - " + (int)(w/4.5));
+        Log.i(TAG,"yFirstBlockOffset - " + (int)(h/5.5));
 
-        Log.i(TAG,"xFirstBlockOffset - " + (int)(w/6.1));
-        Log.i(TAG,"yFirstBlockOffset - " + (int)(h/2.7));
-
-        omrSheetBlock.setxDistanceBetweenBlock((int)(w/6.3));
+        omrSheetBlock.setxDistanceBetweenBlock((int)(w/4.0));//original 7.0
         omrSheetBlock.setyDistanceBetweenBlock(0);
 
-        Log.i(TAG,"xDistanceBetweenBlock - " + (int)(w/6.3));
+        Log.i(TAG,"xDistanceBetweenBlock - " + (int)(w/4.0));
         Log.i(TAG,"yDistanceBetweenBlock - " + 0);
 
-        omrSheetBlock.setyDistanceBetweenRows((int)(h/53.0));
+        omrSheetBlock.setyDistanceBetweenRows((int)(h/84.0));//original 100.0///90
 
-        Log.i(TAG,"yDistanceBetweenRows - " + (int)(h/53.0));
+        Log.i(TAG,"yDistanceBetweenRows - " + (int)(h/84.0));//90//84
 
-        omrSheetBlock.setxDistanceBetweenCircles((int)(w/14.77));
-        omrSheetBlock.setyDistanceBetweenCircles((int)(h/26.6));
+        omrSheetBlock.setxDistanceBetweenCircles((int)(w/16.0));//original 25.0
+        omrSheetBlock.setyDistanceBetweenCircles((int)(h/50.0));//original 50.0
 
-        Log.i(TAG,"xDistanceBetweenCircles - " + (int)(w/14.77));
-        Log.i(TAG,"yDistanceBetweenCircles - " + (int)(h/26.6));
+        Log.i(TAG,"xDistanceBetweenCircles - " + (int)(w/16.0));//15
+        Log.i(TAG,"yDistanceBetweenCircles - " + (int)(h/50.0));//45
     }
 
     public Mat getMatOMRSheet() {
@@ -128,7 +127,7 @@ public class OMRSheet extends ViewModel {
     }
 
     public int getWidthOfBoundingSquareForCircle() {
-        widthOfBoundingSquareForCircle = (int)(getWidth()/17.0);
+        widthOfBoundingSquareForCircle = (int)(getWidth()/27.5);//original 30
         //The width should be even otherwise we will get width difference of 1 in getTotalPixelsInBoundingSquare()
         // as we divide the width in getRectangleCoordinates()
         if(widthOfBoundingSquareForCircle % 2 != 0)

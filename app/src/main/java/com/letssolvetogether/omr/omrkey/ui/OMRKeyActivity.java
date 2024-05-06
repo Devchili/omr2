@@ -1,11 +1,10 @@
 package com.letssolvetogether.omr.omrkey.ui;
 
 import androidx.room.Room;
-
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.RadioButton;
@@ -21,7 +20,7 @@ import com.letssolvetogether.omr.utils.AnswersUtils;
 
 public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnCheckedChangeListener{
 
-    private int circleIds[] = new int[]{R.mipmap.ic_omr_circle_a, R.mipmap.ic_omr_circle_b, R.mipmap.ic_omr_circle_c, R.mipmap.ic_omr_circle_d, R.mipmap.ic_omr_circle_e};
+    private int circleIds[] = new int[]{R.mipmap.ic_omr_circle_a, R.mipmap.ic_omr_circle_b, R.mipmap.ic_omr_circle_c, R.mipmap.ic_omr_circle_d};
 
     private int[] correctAnswers;
 
@@ -32,21 +31,33 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_omrkey);
 
-        noOfQuestions = getIntent().getIntExtra("noOfQuestions", 20);
+        noOfQuestions = getIntent().getIntExtra("noOfQuestions", noOfQuestions);
         createAnswerKey(noOfQuestions);
         loadCorrectAnswers(noOfQuestions);
+
+        findViewById(R.id.btnSubmit).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                storeCorrectAnswers(noOfQuestions);
+            }
+        });
     }
+
+    public void onSubmitButtonClick(View view) {
+        storeCorrectAnswers(noOfQuestions);
+
+    }
+
 
     @Override
     public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-
         int id = compoundButton.getId();
         CheckBox checkBox;
 
-        for (int i = (id/5)*5; i < (id/5)*5 + 5; i++){
+        for (int i = (id/4)*4; i < (id/4)*4 + 4; i++){
             checkBox = findViewById(i);
             if(checkBox.isChecked() && i != id){
-                checkBox.setButtonDrawable(circleIds[i%5]);
+                checkBox.setButtonDrawable(circleIds[i%4]);
                 checkBox.setChecked(false);
                 break;
             }
@@ -57,27 +68,18 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
             compoundButton.setChecked(true);
         }
         else {
-            compoundButton.setButtonDrawable(circleIds[id%5]);
+            compoundButton.setButtonDrawable(circleIds[id%4]);
             compoundButton.setChecked(false);
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        storeCorrectAnswers(noOfQuestions);
-    }
-
     public void createAnswerKey(int noOfQuestions){
-
         TextView textView;
         CheckBox checkBox;
-
         TableLayout tableLayout = findViewById(R.id.tableLayout);
         TableRow tableRow;
 
         for(int i=0; i < noOfQuestions; i++){
-
             textView = new TextView(this);
             tableRow = new TableRow(this);
 
@@ -87,18 +89,16 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
                 textView.setText(String.valueOf(i+1)+")\t\t");
 
             textView.setTextSize(20);
-            textView.setPadding(5,0,0,0);
+            textView.setPadding(4,0,0,0);
 
             tableRow.addView(textView);
 
-            for(int j=0; j<5; j++){
-
+            for(int j=0; j<4; j++){
                 checkBox = new CheckBox(this);
-                checkBox.setId((i*5)+j);
+                checkBox.setId((i*4)+j);
                 checkBox.setButtonDrawable(circleIds[j]);
-                checkBox.setPadding(5,30,5,30);
+                checkBox.setPadding(4,30,4,30);
                 checkBox.setOnCheckedChangeListener(this);
-
                 tableRow.addView(checkBox);
             }
             tableLayout.addView(tableRow);
@@ -106,7 +106,6 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
     }
 
     public void loadCorrectAnswers(final int noOfQuestions){
-
         final String[] strCorrectAnswers = {""};
         final AppDatabase db = Room.databaseBuilder(getApplicationContext(),
                 AppDatabase.class, "omr").build();
@@ -136,7 +135,7 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
                     for(int i=0; i< answers.length; i++){
                         correctAnswer = answers[i];
                         if(correctAnswer != 0){
-                            checkBox = findViewById((i*5) + (correctAnswer - 1));
+                            checkBox = findViewById((i*4) + (correctAnswer - 1));
                             checkBox.setChecked(true);
                         }
                     }
@@ -145,19 +144,18 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
         }.execute();
     }
 
-    @SuppressLint("StaticFieldLeak")
     public void storeCorrectAnswers(int noOfQuestions){
         correctAnswers = new int[noOfQuestions];
         int cnt = -1;
         CheckBox checkBox;
-        for(int i=0; i < noOfQuestions * 5; i++){
+        for(int i=0; i < noOfQuestions * 4; i++){
             checkBox = findViewById(i);
 
-            if(i%5 == 0)
+            if(i%4 == 0)
                 cnt++;
 
             if(checkBox.isChecked()){
-                correctAnswers[cnt] = (i % 5) + 1;
+                correctAnswers[cnt] = (i % 4) + 1;
             }
         }
 
@@ -176,8 +174,14 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
                     db.omrKeyDao().insertOMRKey(omrKey);
                     return null;
                 }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    super.onPostExecute(aVoid);
+                    Toast.makeText(OMRKeyActivity.this, "Answers saved", Toast.LENGTH_LONG).show();
+                }
             }.execute();
-            Toast.makeText(this,"Answers saved",Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 }

@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="quiz_numbers">
-        <item>All</item>
-        <item>Quiz 1</item>
-        <item>Quiz 2</item>
-        <item>Quiz 3</item>
-        <item>Quiz 4</item>
-        <item>Quiz 5</item>
+    <string-array name="question_options_array">
+        <item>25</item>
+        <item>30</item>
+        <item>50</item>
     </string-array>
 </resources>

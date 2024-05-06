@@ -23,20 +23,34 @@ import java.util.Set;
 
 public class AddStudentActivity extends AppCompatActivity {
     private EditText editTextStudentName;
-    private long classroomId;
     private DatabaseHelper dbHelper;
     private List<String> studentInfoList; // List to store student name and score
     private ArrayAdapter<String> adapter;
     private Set<String> addedStudents; // Keep track of added students
+    private long examId;
+    private String examName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_student);
 
-        editTextStudentName = findViewById(R.id.edit_text_student_name);
-        classroomId = getIntent().getLongExtra("classroomId", -1);
+
+        examId = getIntent().getLongExtra("examId", -1);
+        String examName = getIntent().getStringExtra("examName"); // Retrieve exam name
+        if (examId == -1 || examName == null) {
+            // Handle the case when examId or examName is not passed correctly
+            Toast.makeText(this, "Error: Exam ID or Exam Name not found", Toast.LENGTH_SHORT).show();
+            finish(); // Close the activity
+            return;
+        }
         dbHelper = new DatabaseHelper(this);
+
+        // Display the exam name
+        TextView textViewExamName = findViewById(R.id.text_view_exam_name);
+        textViewExamName.setText("Exam Name: " + examName);
+
+
 
         studentInfoList = new ArrayList<>();
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, studentInfoList);
@@ -46,34 +60,51 @@ public class AddStudentActivity extends AppCompatActivity {
         loadStudentsFromDatabase();
     }
 
-    private void loadStudentsFromDatabase() {
-        List<String> students = dbHelper.getStudentsForClassroomSortedByNameAscending(classroomId);
-        studentInfoList.clear();
-        studentInfoList.addAll(students);
-        adapter.notifyDataSetChanged();
 
-        // Add student blocks to the UI
-        for (String student : students) {
-            if (!addedStudents.contains(student)) {
-                addStudentBlockToUI(student);
-                addedStudents.add(student); // Add the student to the set
+
+
+    private void loadStudentsFromDatabase() {
+        String examName = getIntent().getStringExtra("examName");
+        if (examName != null) {
+            List<String> students = dbHelper.getStudentsForExamByName(examName);
+            studentInfoList.clear();
+            studentInfoList.addAll(students);
+            adapter.notifyDataSetChanged();
+
+            // Add student blocks to the UI
+            for (String student : students) {
+                if (!addedStudents.contains(student)) {
+                    addStudentBlockToUI(student, examId);
+                    addedStudents.add(student); // Add the student to the set
+                }
             }
+        } else {
+            Toast.makeText(this, "Error: Exam Name not found", Toast.LENGTH_SHORT).show();
         }
     }
+
+
+
 
     public void addStudent(View view) {
         String studentName = editTextStudentName.getText().toString().trim();
         if (!studentName.isEmpty()) {
-            dbHelper.insertStudent(classroomId, studentName);
-            Toast.makeText(this, "Student added successfully", Toast.LENGTH_SHORT).show();
-            editTextStudentName.getText().clear();
-            loadStudentsFromDatabase(); // Refresh the list after adding a student
+            String examName = getIntent().getStringExtra("examName"); // Retrieve exam name
+            if (examName != null) {
+                dbHelper.insertStudent(examId, examName, studentName); // Pass exam name along with exam ID and student name
+                Toast.makeText(this, "Student added successfully", Toast.LENGTH_SHORT).show();
+                editTextStudentName.getText().clear();
+                loadStudentsFromDatabase(); // Refresh the list after adding a student
+            } else {
+                Toast.makeText(this, "Error: Exam Name not found", Toast.LENGTH_SHORT).show();
+            }
         } else {
             Toast.makeText(this, "Please enter a student name", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void addStudentBlockToUI(String studentName) {
+
+    private void addStudentBlockToUI(String studentName, long examId) {
         LinearLayout layoutStudents = findViewById(R.id.layout_students); // Assuming this is the parent layout
 
         // Create a new LinearLayout for the student block
@@ -91,18 +122,24 @@ public class AddStudentActivity extends AppCompatActivity {
         btnStudent.setText(studentName);
         studentBlockLayout.addView(btnStudent);
 
-        // Create a TextView for the student's score
+// Assuming dbHelper is an instance of your database helper class
+
+// Assuming studentName and examId are already defined
+
+// Get the score for the student and exam
+
+        List<Integer> score = dbHelper.getScoresForStudent(studentName);
+
+// Create a new TextView to display the score
         TextView txtScore = new TextView(this);
         txtScore.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
-        int score = dbHelper.getScoreForStudent(studentName, classroomId);
-        if (score != -1) {
-            txtScore.setText("Score: " + score);
-        } else {
-            txtScore.setText("Score: N/A");
-        }
+        txtScore.setText("Score: " + score);
+
+// Add the TextView to the studentBlockLayout (assuming studentBlockLayout is already defined)
         studentBlockLayout.addView(txtScore);
+
 
         // Create the delete button
         ImageButton btnDelete = new ImageButton(this);
@@ -119,7 +156,7 @@ public class AddStudentActivity extends AppCompatActivity {
                         .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 // Delete the student from the database
-                                dbHelper.deleteStudent(classroomId, studentName);
+                                dbHelper.deleteStudent(examId, studentName);
 
                                 // Remove the student from the list
                                 studentInfoList.remove(studentName);
@@ -145,5 +182,6 @@ public class AddStudentActivity extends AppCompatActivity {
         // Add the student block to the layout
         layoutStudents.addView(studentBlockLayout);
     }
+
 
 }

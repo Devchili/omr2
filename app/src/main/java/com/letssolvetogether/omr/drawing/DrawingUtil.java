@@ -37,7 +37,7 @@ public class DrawingUtil {
         Paint paint = new Paint();
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(color);
-        paint.setStrokeWidth(5);
+        paint.setStrokeWidth(3);//5
         return paint;
     }
 

@@ -6,46 +6,95 @@
     android:background="#000000"
     tools:context="com.letssolvetogether.omr.camera.ui.CameraActivity">
 
+
+
     <!-- The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
          TextureView, etc. -->
     <com.google.android.cameraview.CameraView
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
-        android:layout_height="478dp"
+        android:layout_height="match_parent"
         android:gravity="center"
-        android:keepScreenOn="true">
+        android:keepScreenOn="true"/>
 
-        <FrameLayout
-            android:layout_width="407dp"
-            android:layout_height="match_parent"
-            android:layout_marginTop="100dp"
-            android:fitsSystemWindows="true">
-
-        </FrameLayout>
-    </com.google.android.cameraview.CameraView>
-
-    <!-- Button to trigger OMR sheet detection -->
-
-    <!-- Placeholder for additional controls -->
-    <Button
-        android:id="@+id/btnDetect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="200dp"
-        android:layout_gravity="center"
-        android:text="Detect OMR Sheet" />
-
-    <LinearLayout
-        android:id="@+id/fullscreen_content_controls"
-        style="?metaButtonBarStyle"
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows. -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="110dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:background="@color/black_overlay"
-        android:orientation="horizontal"
-        tools:ignore="UselessParent">
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
 
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/fullscreen_content_controls"
+            style="?metaButtonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="@color/black_overlay"
+            android:orientation="horizontal"
+            tools:ignore="UselessParent">
+
+        </LinearLayout>
+
+        <!-- Semi-transparent squares -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <View
+                android:id="@+id/top_left_square"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginStart="15dp"
+                android:layout_marginTop="44dp"
+                android:background="#80000000" />
+
+            <View
+                android:id="@+id/top_right_square"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="46dp"
+                android:layout_marginEnd="13dp"
+                android:background="#80000000" />
+
+            <View
+                android:id="@+id/bottom_left_square"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="172dp"
+                android:background="#80000000" />
+
+            <View
+                android:id="@+id/bottom_right_square"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="11dp"
+                android:layout_marginBottom="171dp"
+                android:background="#80000000" />
+
+        </RelativeLayout>
+        <!-- TextView for displaying exam name -->
+        <TextView
+            android:id="@+id/exam_name_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="16dp"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+
+    </FrameLayout>
 
 </FrameLayout>

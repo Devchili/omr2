@@ -10,22 +10,23 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.HashMap;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.letssolvetogether.omr.camera.ui.CameraActivity;
 import com.letssolvetogether.omr.main.R;
+import com.letssolvetogether.omr.omrkey.ui.OMRKeyActivity;
 
 import java.util.List;
 import java.util.Map;
 
 public class Class extends AppCompatActivity {
     private LinearLayout layoutClassrooms;
-    private EditText editTextClassroomName;
-    private DatabaseHelper dbHelper;
 
-    // Map to keep track of added classroom blocks
+    private DatabaseHelper dbHelper;
     private Map<Long, View> classroomViews;
 
     @Override
@@ -34,11 +35,11 @@ public class Class extends AppCompatActivity {
         setContentView(R.layout.activity_class);
 
         layoutClassrooms = findViewById(R.id.list_view_classrooms);
-        editTextClassroomName = findViewById(R.id.edit_text_classroom_name);
+
         dbHelper = new DatabaseHelper(this);
         classroomViews = new HashMap<>();
 
-        Button addButton = findViewById(R.id.btn_add_classroom);
+        ImageButton addButton = findViewById(R.id.btn_add_class);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -46,14 +47,12 @@ public class Class extends AppCompatActivity {
             }
         });
 
-        // Load existing classrooms from the database
         loadClassroomsFromDatabase();
     }
 
     private void loadClassroomsFromDatabase() {
         List<ClassroomBlock> classrooms = dbHelper.getAllClassroomsSortedByNameAscending();
         for (ClassroomBlock classroom : classrooms) {
-            // Check if the classroom is not already added
             if (!classroomViews.containsKey(classroom.getId())) {
                 addClassroomBlockToUI(classroom);
             }
@@ -61,70 +60,103 @@ public class Class extends AppCompatActivity {
     }
 
 
-    private void addClassroomBlockToUI(ClassroomBlock classroom) {
+    private void addClassroomBlockToUI (ClassroomBlock classroom){
+        // Create buttons for the classroom and delete
         Button btnClassroom = new Button(this);
         btnClassroom.setText(classroom.getName());
-        btnClassroom.setOnClickListener(view -> {
-            Intent intent = new Intent(Class.this, AddStudentActivity.class);
-            intent.putExtra("classroomId", classroom.getId());
-            startActivity(intent);
+        btnClassroom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Class.this, Subject.class);
+                intent.putExtra("classroomId", classroom.getId());
+                startActivity(intent);
+            }
         });
+
+
+        ImageButton btnCam = new ImageButton(this);
+        btnCam.setImageResource(R.drawable.baseline_camera_alt_24);
+        btnCam.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Class.this, Database.class);
+                intent.putExtra("classroomId", classroom.getId());
+                startActivity(intent);
+            }
+        });
+
 
         ImageButton btnDelete = new ImageButton(this);
         btnDelete.setImageResource(R.drawable.baseline_delete_24);
-        btnDelete.setOnClickListener(view -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Are you sure you want to delete this classroom?")
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dbHelper.deleteClassroom(classroom.getId());
-                            // Find the parent of the delete button, which is the LinearLayout containing both buttons
-                            LinearLayout parentLayout = (LinearLayout) view.getParent();
-                            // Remove the parent layout
-                            layoutClassrooms.removeView(parentLayout);
-                            // Remove from the map
-                            classroomViews.remove(classroom.getId());
-                        }
-                    })
-                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog, do nothing
-                        }
-                    });
-            AlertDialog alertDialog = builder.create();
-            alertDialog.show();
+        btnDelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(Class.this);
+                builder.setMessage("Are you sure you want to delete this classroom?")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dbHelper.deleteClassroom(classroom.getId());
+                                LinearLayout parentLayout = (LinearLayout) view.getParent();
+                                layoutClassrooms.removeView(parentLayout);
+                                classroomViews.remove(classroom.getId());
+                            }
+                        })
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                // User cancelled the dialog, do nothing
+                            }
+                        });
+                AlertDialog alertDialog = builder.create();
+                alertDialog.show();
+            }
         });
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.HORIZONTAL);
         layout.addView(btnClassroom);
+        // Add OMR Key button to the left
 
-        // Add spacer to push delete button to the right
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.weight = 1;
-        layout.addView(new View(this), params);
 
+        // Add spacer to push the buttons to the right
+        layout.addView(new View(this), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+
+        layout.addView(btnCam);
         layout.addView(btnDelete);
 
-        // Add the new classroom block to the end of the classrooms layout
-        layoutClassrooms.addView(layout, layoutClassrooms.getChildCount());
-
-        // Add to the map
+        layoutClassrooms.addView(layout);
         classroomViews.put(classroom.getId(), layout);
     }
 
-
     public void addClassroomBlock() {
-        String classroomName = editTextClassroomName.getText().toString().trim();
-        if (!classroomName.isEmpty()) {
-            // Insert the new classroom into the database
-            ClassroomBlock classroom = dbHelper.insertClassroom(classroomName);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Add Classroom");
 
-            // Add the newly inserted classroom to the UI
-            addClassroomBlockToUI(classroom);
+        // Set up the input for classroom name
+        final EditText inputClassroomName = new EditText(this);
+        inputClassroomName.setHint("Enter classroom name");
+        builder.setView(inputClassroomName);
 
-            // Clear the EditText field
-            editTextClassroomName.getText().clear();
-        }
+        // Set up the buttons
+        builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String classroomName = inputClassroomName.getText().toString().trim();
+                if (!classroomName.isEmpty()) {
+                    ClassroomBlock classroom = dbHelper.insertClassroom(classroomName);
+                    addClassroomBlockToUI(classroom);
+                } else {
+                    Toast.makeText(Class.this, "Please enter a classroom name", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
+
 }

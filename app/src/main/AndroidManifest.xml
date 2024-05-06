@@ -14,31 +14,25 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.letssolvetogether.omr.GraphActivity"
+            android:name="com.letssolvetogether.omr.Database"
             android:exported="false" />
         <activity
-            android:name="com.letssolvetogether.omr.ScoreGraphActivity"
+            android:name="com.letssolvetogether.omr.Exam"
             android:exported="false" />
-        <activity
-            android:name="com.letssolvetogether.omr.ViewDatabaseContentsActivity"
-            android:exported="false" />
+        <activity android:name="com.letssolvetogether.omr.Subject" />
         <activity
             android:name="com.letssolvetogether.omr.AddStudentActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.letssolvetogether.omr.Class"
             android:exported="false" />
         <activity android:name="com.letssolvetogether.omr.omrkey.ui.OMRKeyActivity" />
         <activity
             android:name="com.letssolvetogether.omr.camera.ui.CameraActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            android:theme="@style/FullscreenTheme" />
+            android:screenOrientation="fullSensor"
+            android:theme="@style/FullscreenTheme"
+            tools:ignore="DiscouragedApi" />
         <activity
-            android:name="com.letssolvetogether.omr.home.ui.HomeActivity"
-            android:exported="true"
-            android:label="@string/app_name">
+            android:name="com.letssolvetogether.omr.Class"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

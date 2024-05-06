@@ -6,35 +6,23 @@
     android:background="@android:color/white"
     tools:context="com.letssolvetogether.omr.Class">
 
-    <EditText
-        android:id="@+id/edit_text_classroom_name"
-        android:layout_width="match_parent"
+    <!-- Title "CLASS" -->
+    <TextView
+        android:id="@+id/text_class_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Enter Classroom Name"
-        android:inputType="text"
-        android:backgroundTint="@color/colorPrimaryDark"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:padding="12dp"
-        android:layout_marginBottom="16dp"
-        android:layout_marginTop="8dp"/>
-
-    <Button
-        android:id="@+id/btn_add_classroom"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Add Classroom"
-        android:textColor="@android:color/white"
-        android:background="@color/colorPrimary"
-        android:textSize="16sp"
-        android:padding="12dp"
-        android:layout_marginBottom="16dp"
-        android:layout_below="@id/edit_text_classroom_name"/>
+        android:text="CLASS"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/btn_add_classroom">
+        android:layout_below="@id/text_class_title"
+        android:layout_above="@id/btn_add_class">
 
         <LinearLayout
             android:id="@+id/list_view_classrooms"
@@ -45,5 +33,17 @@
             android:paddingBottom="16dp"/>
 
     </ScrollView>
+
+    <ImageButton
+        android:id="@+id/btn_add_class"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@null"
+        android:contentDescription="Add Class"
+        android:src="@drawable/add" />
 
 </RelativeLayout>

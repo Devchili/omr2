@@ -1,14 +1,14 @@
 package com.letssolvetogether.omr;
 
-import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import androidx.appcompat.app.AlertDialog;
+
+import android.text.InputType;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -37,20 +37,29 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
     private Bitmap bmpOMRSheet;
     private Mat matOMR;
     private CameraView mCameraView;
-
     private LinearLayout linearLayout;
     private ImageView iv;
     private DetectionUtil detectionUtil;
     private PrereqChecks prereqChecks;
     private byte[][] studentAnswers;
     private int score;
+    private String examName;
 
-    private DatabaseHelper databaseHelper;
+    private DatabaseHelper dbHelper;
+    private long examId;
 
-    public ProcessOMRSheetAsyncTask(CameraView mCameraView, OMRSheet omrSheet, DatabaseHelper databaseHelper) {
+    public ProcessOMRSheetAsyncTask(CameraView mCameraView, OMRSheet omrSheet, String examName, long examId, DatabaseHelper dbHelper) {
         this.omrSheet = omrSheet;
         this.mCameraView = mCameraView;
-        this.databaseHelper = databaseHelper;
+        this.examName = examName;
+        this.dbHelper = dbHelper;
+        this.examId = examId;
+
+        if (this.dbHelper == null) {
+            // Initialize dbHelper if it is null
+            this.dbHelper = new DatabaseHelper(mCameraView.getContext()); // Assuming DatabaseHelper constructor requires a Context parameter
+        }
+
 
         detectionUtil = new DetectionUtil(omrSheet);
         prereqChecks = new PrereqChecks();
@@ -106,7 +115,7 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
             } catch (UnsupportedCameraResolutionException e) {
                 AlertDialog.Builder dialogUnsupporteCameraResolution = new AlertDialog.Builder(mCameraView.getContext());
 
-                dialogUnsupporteCameraResolution.setMessage("The Camera resolution " + roiOfOMR.rows() + "x" + matOMR.cols() + " is not supported by OMR Checker.\nPlease take a screenshot and send an email to shreyaspatel29@gmail.com");
+                dialogUnsupporteCameraResolution.setMessage("The Camera resolution " + roiOfOMR.rows() + "x" + matOMR.cols() + " is not supported by OMR Checker.\nPlease take screenshot and send a mail to shreyaspatel29@gmail.com");
                 dialogUnsupporteCameraResolution.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -125,24 +134,67 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
             // Set custom title to dialog box
             TextView textView = new TextView(mCameraView.getContext());
-            textView.setText(" Score: " + score);
+            textView.setText("Exam: " + examName + "\nScore: " + score);
             textView.setTextColor(Color.BLACK);
             textView.setTextSize(30);
 
-            // Set OMR Sheet to be displayed in the dialog
+            // Set OMR Sheet to be displayed in dialog
             iv.setImageBitmap(omrSheet.getBmpOMRSheet());
 
             dialogOMRSheetDisplay.setCustomTitle(textView);
             dialogOMRSheetDisplay.setView(linearLayout);
-            dialogOMRSheetDisplay.setPositiveButton("Save Score", new DialogInterface.OnClickListener() {
+
+            dialogOMRSheetDisplay.setPositiveButton("Save", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    // Show dialog to select classroom
-                    showClassroomSelectionDialog();
+                    // Check if dbHelper is not null
+                    if (dbHelper != null) {
+                        // Prompt user to input student's name
+                        AlertDialog.Builder builder = new AlertDialog.Builder(mCameraView.getContext());
+                        builder.setTitle("Enter Student's Name");
+
+                        // Set up the input
+                        final EditText input = new EditText(mCameraView.getContext());
+                        input.setInputType(InputType.TYPE_CLASS_TEXT);
+                        builder.setView(input);
+
+                        // Set up the buttons
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String studentName = input.getText().toString();
+
+                                // Store the score for the specified student and exam
+                                dbHelper.saveScore(examName, studentName, score);
+
+                                // Show a toast indicating the score has been saved for the selected student
+                                Toast.makeText(mCameraView.getContext(), "Score saved for " + studentName, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+
+                        builder.show();
+                    } else {
+                        // Handle the case when dbHelper is null
+                        // Display a toast message indicating that dbHelper is not initialized
+                        Toast.makeText(mCameraView.getContext(), "Error: Database helper not initialized", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
-            dialogOMRSheetDisplay.setNeutralButton("Go for next OMR", new DialogInterface.OnClickListener() {
+
+            dialogOMRSheetDisplay.setNeutralButton("Next", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dlg, int sumthin) {
+                }
+            });
+
+            dialogOMRSheetDisplay.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialogInterface) {
                     mCameraView.requestPreviewFrame();
                 }
             });
@@ -152,58 +204,4 @@ public class ProcessOMRSheetAsyncTask extends AsyncTask<Void, Void, Boolean> {
         }
     }
 
-
-
-    private void showClassroomSelectionDialog() {
-        // Fetch classrooms from database
-        final List<ClassroomBlock> classrooms = databaseHelper.getAllClassrooms();
-
-        // Show dialog to select classroom
-        AlertDialog.Builder builder = new AlertDialog.Builder(mCameraView.getContext());
-        builder.setTitle("Select Classroom");
-        CharSequence[] items = new CharSequence[classrooms.size()];
-        for (int i = 0; i < classrooms.size(); i++) {
-            items[i] = classrooms.get(i).getName();
-        }
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                final ClassroomBlock selectedClassroom = classrooms.get(which);
-                // Show dialog to select student
-                showStudentSelectionDialog(selectedClassroom);
-            }
-        });
-        builder.show();
-    }
-
-    private void showStudentSelectionDialog(final ClassroomBlock classroom) {
-        // Fetch students for the selected classroom from database
-        final List<String> studentNames = databaseHelper.getStudentsForClassroom(classroom.getId());
-
-        // Show dialog to select student
-        AlertDialog.Builder builder = new AlertDialog.Builder(mCameraView.getContext());
-        builder.setTitle("Select Student");
-        CharSequence[] items = new CharSequence[studentNames.size()];
-        for (int i = 0; i < studentNames.size(); i++) {
-            items[i] = studentNames.get(i);
-        }
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String selectedStudent = studentNames.get(which);
-                // Save score for the selected student
-                saveScoreForStudent(classroom.getName(), selectedStudent, score);
-            }
-        });
-        builder.show();
-    }
-
-    private void saveScoreForStudent(String classroomName, String studentName, int score) {
-        // Save score for the student in the specified classroom
-        databaseHelper.saveScore(classroomName, studentName, score);
-
-        // Display a toast message confirming the successful saving of the score
-        String message = "Score saved for student: " + studentName + " in classroom: " + classroomName;
-        Toast.makeText(mCameraView.getContext(), message, Toast.LENGTH_SHORT).show();
-    }
 }

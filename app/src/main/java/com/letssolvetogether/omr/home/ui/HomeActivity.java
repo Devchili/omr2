@@ -1,6 +1,5 @@
 package com.letssolvetogether.omr.home.ui;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AlertDialog;
@@ -9,8 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
-import com.letssolvetogether.omr.GraphActivity;
-import com.letssolvetogether.omr.ViewDatabaseContentsActivity;
+
 import com.letssolvetogether.omr.main.R;
 import com.letssolvetogether.omr.omrkey.ui.OMRKeyActivity;
 import com.letssolvetogether.omr.camera.ui.CameraActivity;
@@ -31,21 +29,12 @@ public class HomeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Open CameraActivity when Scan OMR Button is clicked
                 Intent cameraIntent = new Intent(HomeActivity.this, CameraActivity.class);
-                cameraIntent.putExtra("noOfQuestions", 20);
+                cameraIntent.putExtra("noOfQuestions", 75);//30//60
                 startActivity(cameraIntent);
             }
         });
 
-        Button viewDatabaseButton = findViewById(R.id.button_db);
 
-        // Set click listener for the View Database button
-        viewDatabaseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Launch the ViewDatabaseContentsActivity
-                startActivity(new Intent(HomeActivity.this, GraphActivity.class));
-            }
-        });
 
         Button nextClassButton = findViewById(R.id.button_class);
 
@@ -64,7 +53,7 @@ public class HomeActivity extends AppCompatActivity {
 
     public void displayAnswerKey(View view) {
         Intent omrKeyActivity = new Intent(this, OMRKeyActivity.class);
-        omrKeyActivity.putExtra("noOfQuestions", 20);
+        omrKeyActivity.putExtra("noOfQuestions", 75);//30//60
         startActivity(omrKeyActivity);
     }
 
