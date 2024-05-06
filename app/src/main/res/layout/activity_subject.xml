@@ -1,0 +1,49 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    tools:context="com.letssolvetogether.omr.Subject">
+
+    <!-- Title "SUBJECT" -->
+    <TextView
+        android:id="@+id/text_subject_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SUBJECT"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/text_subject_title"
+        android:layout_above="@id/btn_add_subject">
+
+        <LinearLayout
+            android:id="@+id/list_view_subjects"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"/>
+
+    </ScrollView>
+
+    <ImageButton
+        android:id="@+id/btn_add_subject"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@null"
+        android:contentDescription="Add Subject"
+        android:src="@drawable/add" />
+
+</RelativeLayout>
