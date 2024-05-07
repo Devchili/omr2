@@ -34,12 +34,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String KEY_EXAM_NAME = "exam_name";
 
     // Classroom table create statement
+
     private static final String CREATE_TABLE_CLASSROOM = "CREATE TABLE " + TABLE_CLASSROOM +
-            "(" + KEY_ID + " INTEGER PRIMARY KEY," + KEY_NAME + " TEXT UNIQUE" + ")";
+            "(" + KEY_ID + " INTEGER PRIMARY KEY," + KEY_NAME + " TEXT" + ")";
 
     private static final String CREATE_TABLE_SUBJECT = "CREATE TABLE " + TABLE_SUBJECT +
             "(" + KEY_ID + " INTEGER PRIMARY KEY," +
-            KEY_NAME + " TEXT UNIQUE," +
+            KEY_NAME + " TEXT," +
             KEY_CLASSROOM_ID + " INTEGER," +
             "FOREIGN KEY(" + KEY_CLASSROOM_ID + ") REFERENCES " + TABLE_CLASSROOM + "(" + KEY_ID + ")" + ")";
 
@@ -47,7 +48,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "(" + KEY_ID + " INTEGER PRIMARY KEY," +
             KEY_NAME + " TEXT," +
             "subject_id INTEGER," +
-            "UNIQUE(" + KEY_NAME + ", subject_id)," + // Ensure uniqueness on name and subject_id
             "FOREIGN KEY(subject_id) REFERENCES " + TABLE_SUBJECT + "(" + KEY_ID + ")" + ")";
 
     private static final String CREATE_TABLE_STUDENT = "CREATE TABLE " + TABLE_STUDENT +
@@ -56,8 +56,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             KEY_EXAM_ID + " INTEGER," +
             "exam_name TEXT," +
             "subject_id INTEGER," +
-            KEY_SCORE + " INTEGER DEFAULT 0," +
-            "UNIQUE(" + KEY_NAME + ", " + KEY_EXAM_ID + ")" + ")"; // Ensure uniqueness on name and exam_id
+            KEY_SCORE + " INTEGER DEFAULT 0" + ")";
+
 
     // TAG for logging
     private static final String TAG = "DatabaseHelper";
@@ -342,22 +342,81 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void deleteClassroom(long classroomId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_CLASSROOM, KEY_ID + " = ?", new String[]{String.valueOf(classroomId)});
-        db.delete(TABLE_STUDENT, KEY_CLASSROOM_ID + " = ?", new String[]{String.valueOf(classroomId)});
-        db.close();
+        try {
+            // Delete all subjects associated with the classroom
+            db.delete(TABLE_SUBJECT, KEY_CLASSROOM_ID + " = ?", new String[]{String.valueOf(classroomId)});
+
+            // Get all exams associated with the subjects of this classroom
+            String selectExamsQuery = "SELECT " + KEY_ID + " FROM " + TABLE_EXAM +
+                    " WHERE " + "subject_id" + " IN (SELECT " + KEY_ID + " FROM " + TABLE_SUBJECT +
+                    " WHERE " + KEY_CLASSROOM_ID + " = ?)";
+            Cursor cursor = db.rawQuery(selectExamsQuery, new String[]{String.valueOf(classroomId)});
+
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    long examId = cursor.getLong(cursor.getColumnIndex(KEY_ID));
+
+                    // Delete all students associated with each exam
+                    db.delete(TABLE_STUDENT, KEY_EXAM_ID + " = ?", new String[]{String.valueOf(examId)});
+
+                    // Delete the exam itself
+                    db.delete(TABLE_EXAM, KEY_ID + " = ?", new String[]{String.valueOf(examId)});
+                }
+                cursor.close();
+            }
+
+            // Finally, delete the classroom
+            db.delete(TABLE_CLASSROOM, KEY_ID + " = ?", new String[]{String.valueOf(classroomId)});
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting classroom and its related data: " + e.getMessage());
+        } finally {
+            db.close();
+        }
     }
+
 
     public void deleteSubject(String subjectName) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_SUBJECT, KEY_NAME + " = ?", new String[]{subjectName});
-        db.close();
+        try {
+            // Get the subject ID
+            long subjectId = getSubjectId(subjectName);
+            if (subjectId == -1) {
+                Log.e(TAG, "Subject not found: " + subjectName);
+                return;
+            }
+
+            // Delete all exams associated with the subject
+            db.delete(TABLE_EXAM, "subject_id = ?", new String[]{String.valueOf(subjectId)});
+
+            // Delete all students associated with the subject and exam name
+            db.delete(TABLE_STUDENT, "subject_id = ? AND exam_name = ?",
+                    new String[]{String.valueOf(subjectId), subjectName});
+
+            // Finally, delete the subject itself
+            db.delete(TABLE_SUBJECT, KEY_ID + " = ?", new String[]{String.valueOf(subjectId)});
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting subject and its related data: " + e.getMessage());
+        } finally {
+            db.close();
+        }
     }
+
 
     public void deleteExam(String examName) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_EXAM, KEY_NAME + " = ?", new String[]{examName});
-        db.close();
+        try {
+            // Delete all students associated with the exam name
+            db.delete(TABLE_STUDENT, "exam_name = ?", new String[]{examName});
+
+            // Finally, delete the exam itself
+            db.delete(TABLE_EXAM, KEY_NAME + " = ?", new String[]{examName});
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting exam and its related data: " + e.getMessage());
+        } finally {
+            db.close();
+        }
     }
+
 
     public void deleteStudent(long examId, String studentName) {
         SQLiteDatabase db = this.getWritableDatabase();

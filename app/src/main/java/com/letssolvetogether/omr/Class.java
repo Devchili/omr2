@@ -74,16 +74,16 @@ public class Class extends AppCompatActivity {
         });
 
 
-        ImageButton btnCam = new ImageButton(this);
-        btnCam.setImageResource(R.drawable.baseline_camera_alt_24);
-        btnCam.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Class.this, Database.class);
-                intent.putExtra("classroomId", classroom.getId());
-                startActivity(intent);
-            }
-        });
+  //      ImageButton btnCam = new ImageButton(this);
+   //     btnCam.setImageResource(R.drawable.baseline_camera_alt_24);
+    //    btnCam.setOnClickListener(new View.OnClickListener() {
+    //        @Override
+    //        public void onClick(View view) {
+    //            Intent intent = new Intent(Class.this, Database.class);
+    //            intent.putExtra("classroomId", classroom.getId());
+    //            startActivity(intent);
+    //        }
+    //    });
 
 
         ImageButton btnDelete = new ImageButton(this);
@@ -120,7 +120,7 @@ public class Class extends AppCompatActivity {
         // Add spacer to push the buttons to the right
         layout.addView(new View(this), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
 
-        layout.addView(btnCam);
+      //  layout.addView(btnCam);
         layout.addView(btnDelete);
 
         layoutClassrooms.addView(layout);
