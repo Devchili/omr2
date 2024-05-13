@@ -31,7 +31,9 @@ public class Exam extends AppCompatActivity {
     private int examId;
 
     private DatabaseHelper dbHelper;
-    private Map<String, View> examViews; // Change key type to String
+    private Map<String, View> examViews;
+    private String className; // Declare class name variable
+    private String subjectName; // Change key type to String
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -43,6 +45,8 @@ public class Exam extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         examViews = new HashMap<>(); // Initialize examViews
+        className = getIntent().getStringExtra("className");
+        subjectName = getIntent().getStringExtra("subjectName");
 
         ImageButton addButton = findViewById(R.id.btn_add_exam);
         addButton.setOnClickListener(new View.OnClickListener() {
@@ -57,6 +61,12 @@ public class Exam extends AppCompatActivity {
 
     private void loadExamsFromDatabase() {
         long subjectId = getIntent().getLongExtra("subjectId", -1);
+        String className = getIntent().getStringExtra("className"); // Retrieve class name from intent
+        String subjectName = getIntent().getStringExtra("subjectName"); // Retrieve subject name from intent
+
+        // Display the class name and subject name
+        setTitle(className + " - " + subjectName);
+
         if (subjectId != -1) {
             List<String> exams = dbHelper.getAllExamsSortedByNameAscending(subjectId);
             for (String exam : exams) {
@@ -69,8 +79,6 @@ public class Exam extends AppCompatActivity {
         }
     }
 
-
-
     private void addExamBlockToUI(String exam, long subjectId, long examId) {
         // Create button for the exam
         Button btnExam = new Button(this);
@@ -82,6 +90,8 @@ public class Exam extends AppCompatActivity {
                 Intent intent = new Intent(Exam.this, AddStudentActivity.class);
                 intent.putExtra("examId", examId);
                 intent.putExtra("examName", exam);
+                intent.putExtra("className", className);
+                intent.putExtra("subjectName", subjectName);
                 startActivity(intent);
             }
         });
@@ -97,14 +107,19 @@ public class Exam extends AppCompatActivity {
                 startActivity(omrKeyActivity);
             }
         });
+
         ImageButton btnCam = new ImageButton(this);
         btnCam.setImageResource(R.drawable.baseline_camera_alt_24);
         btnCam.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent cameraIntent = new Intent(Exam.this, CameraActivity.class);
+
                 cameraIntent.putExtra("examName", exam); // Pass the exam name as an extra
                 cameraIntent.putExtra("noOfQuestions", noOfQuestions);
+                cameraIntent.putExtra("className", className); // Pass the class name
+                cameraIntent.putExtra("subjectName", subjectName); // Pass the subject name
+                cameraIntent.putExtra("examName", exam);
                 startActivity(cameraIntent);
             }
         });
@@ -145,7 +160,6 @@ public class Exam extends AppCompatActivity {
         layoutExams.addView(layout);
         examViews.put(exam, layout); // Use exam name as key
     }
-
 
     public void addExamBlock() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -192,7 +206,7 @@ public class Exam extends AppCompatActivity {
                     // Check if the exam name already exists
                     if (!dbHelper.hasExamWithName(examName)) {
                         if (subjectId != -1) {
-                            dbHelper.insertExam(examName, subjectId); // Use the retrieved subject ID
+                            dbHelper.insertExam(examName, subjectId, noOfQuestions); // Use the retrieved subject ID
                             addExamBlockToUI(examName, subjectId, examId); // Pass subjectId to addExamBlockToUI
                         } else {
                             Toast.makeText(Exam.this, "Error: Subject ID not found", Toast.LENGTH_SHORT).show();

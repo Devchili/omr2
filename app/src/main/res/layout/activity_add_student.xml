@@ -6,6 +6,12 @@
     android:padding="16dp"
     tools:context="com.letssolvetogether.omr.AddStudentActivity">
 
+    <Button
+        android:id="@+id/btnExportToExcel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Export to Excel"
+        android:onClick="exportToExcel" />
 
 
     <TextView

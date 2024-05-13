@@ -31,7 +31,7 @@ public class OMRKeyActivity extends AppCompatActivity implements RadioButton.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_omrkey);
 
-        noOfQuestions = getIntent().getIntExtra("noOfQuestions", noOfQuestions);
+        noOfQuestions = getIntent().getIntExtra("noOfQuestions", 25);
         createAnswerKey(noOfQuestions);
         loadCorrectAnswers(noOfQuestions);
 

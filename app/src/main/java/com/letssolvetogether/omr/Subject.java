@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.menu.BaseMenuPresenter;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +25,31 @@ public class Subject extends AppCompatActivity {
     private EditText editTextSubjectName;
     private DatabaseHelper dbHelper;
     private Map<Long, View> subjectViews;
+    private String className; // Added to store the class name
+
+    private long classroomId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_subject);
 
+        // Retrieve the class name from the intent extra
+        className = getIntent().getStringExtra("className");
+
+        long classroomId = getIntent().getLongExtra("classroomId", -1);
+
+
         layoutSubjects = findViewById(R.id.list_view_subjects);
 
         dbHelper = new DatabaseHelper(this);
         subjectViews = new HashMap<>();
+
+        // Set the title of the activity to the class name
+        if (className != null) {
+            setTitle(className + " - Classroom ID: " + classroomId);
+        }
+
 
         ImageButton addButton = findViewById(R.id.btn_add_subject);
         addButton.setOnClickListener(new View.OnClickListener() {
@@ -72,7 +88,10 @@ public class Subject extends AppCompatActivity {
                 if (subjectId != -1) {
                     // Subject ID found, proceed to start Exam activity
                     Intent examIntent = new Intent(Subject.this, Exam.class);
+                    examIntent.putExtra("classroomId", classroomId);
                     examIntent.putExtra("subjectId", subjectId);
+                    examIntent.putExtra("className", className); // Pass the class name
+                    examIntent.putExtra("subjectName", subject); // Pass the subject name
                     startActivity(examIntent);
                 } else {
                     // Subject ID not found, show error message
@@ -122,8 +141,6 @@ public class Subject extends AppCompatActivity {
         subjectViews.put((long) subject.hashCode(), layout);
     }
 
-
-
     public void addSubjectBlock() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Add Subject");
@@ -160,5 +177,4 @@ public class Subject extends AppCompatActivity {
 
         builder.show();
     }
-
 }

@@ -6,6 +6,13 @@
     android:background="@android:color/white"
     tools:context="com.letssolvetogether.omr.Class">
 
+    <Button
+        android:id="@+id/btn_open_database"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Open Database" />
+
+
     <!-- Title "CLASS" -->
     <TextView
         android:id="@+id/text_class_title"

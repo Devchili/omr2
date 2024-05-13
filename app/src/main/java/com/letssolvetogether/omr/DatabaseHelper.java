@@ -1,13 +1,32 @@
 package com.letssolvetogether.omr;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,31 +55,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Classroom table create statement
 
     private static final String CREATE_TABLE_CLASSROOM = "CREATE TABLE " + TABLE_CLASSROOM +
-            "(" + KEY_ID + " INTEGER PRIMARY KEY," + KEY_NAME + " TEXT" + ")";
+            "(" + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + KEY_NAME + " TEXT" + ")";
 
     private static final String CREATE_TABLE_SUBJECT = "CREATE TABLE " + TABLE_SUBJECT +
-            "(" + KEY_ID + " INTEGER PRIMARY KEY," +
+            "(" + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
             KEY_NAME + " TEXT," +
             KEY_CLASSROOM_ID + " INTEGER," +
             "FOREIGN KEY(" + KEY_CLASSROOM_ID + ") REFERENCES " + TABLE_CLASSROOM + "(" + KEY_ID + ")" + ")";
 
     private static final String CREATE_TABLE_EXAM = "CREATE TABLE " + TABLE_EXAM +
-            "(" + KEY_ID + " INTEGER PRIMARY KEY," +
+            "(" + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
             KEY_NAME + " TEXT," +
             "subject_id INTEGER," +
+            "num_questions INTEGER," + // Add column for number of questions
             "FOREIGN KEY(subject_id) REFERENCES " + TABLE_SUBJECT + "(" + KEY_ID + ")" + ")";
 
     private static final String CREATE_TABLE_STUDENT = "CREATE TABLE " + TABLE_STUDENT +
-            "(" + KEY_ID + " INTEGER PRIMARY KEY," +
+            "(" + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
             KEY_NAME + " TEXT," +
             KEY_EXAM_ID + " INTEGER," +
             "exam_name TEXT," +
             "subject_id INTEGER," +
             KEY_SCORE + " INTEGER DEFAULT 0" + ")";
 
+    private static final String CREATE_TABLE_ANSWER_COMPARISON = "CREATE TABLE answer_comparison (" +
+            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "question_number INTEGER," +
+            "student_answer TEXT," +
+            "correct_answer TEXT," +
+            "is_correct INTEGER" +
+            ")";
+
+
 
     // TAG for logging
     private static final String TAG = "DatabaseHelper";
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 134123;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -99,8 +129,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                String name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
-                int score = cursor.getInt(cursor.getColumnIndex(KEY_SCORE));
+                @SuppressLint("Range") String name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
+                @SuppressLint("Range") int score = cursor.getInt(cursor.getColumnIndex(KEY_SCORE));
                 students.add(new StudentBlock(name, score));
             }
             cursor.close();
@@ -175,6 +205,104 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return examName;
     }
 
+    public void exportAllScoresToExcel(Context context, String className, String subjectName, String examName) {
+        // Get all student scores
+        List<Map.Entry<String, Integer>> allScores = getScoresForAllStudents();
+
+        // Create a new workbook
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("All Student Scores");
+
+        // Add header row
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Student Name");
+        headerRow.createCell(1).setCellValue("Score");
+
+        // Add data rows
+        int rowNum = 1;
+        for (Map.Entry<String, Integer> entry : allScores) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(entry.getKey()); // Student name
+            row.createCell(1).setCellValue(entry.getValue()); // Score
+        }
+
+        // Generate the file name based on classroom, subject, and exam names
+        String now = String.valueOf(System.currentTimeMillis());
+        String fileName = className + "_" + subjectName + "_" + examName + ".xlsx";
+
+        // Determine the file path based on Android version
+        String filePath;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD_MR1) {
+            filePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) + "/" + fileName;
+        } else {
+            filePath = Environment.getExternalStorageDirectory().toString() + "/" + fileName;
+        }
+
+
+        // Save the workbook to the specified file path
+        File file = new File(filePath);
+        try (FileOutputStream fileOut = new FileOutputStream(file)) {
+            workbook.write(fileOut);
+            Toast.makeText(context, "All student scores exported to Excel successfully", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Log.e(TAG, "Error exporting all student scores to Excel: " + e.getMessage());
+            Toast.makeText(context, "Error exporting all student scores to Excel", Toast.LENGTH_SHORT).show();
+        } finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Error closing workbook: " + e.getMessage());
+            }
+        }
+    }
+
+
+    private List<Map.Entry<String, Integer>> getScoresForAllStudents() {
+        List<Map.Entry<String, Integer>> allScores = new ArrayList<>();
+
+        // Get all students with their scores
+        List<StudentBlock> students = getAllStudentsWithScores();
+        for (StudentBlock student : students) {
+            String studentName = student.getName();
+            int score = student.getScore();
+            allScores.add(new AbstractMap.SimpleEntry<>(studentName, score));
+        }
+
+        return allScores;
+    }
+    @SuppressLint("Range")
+    public List<Integer> getScoresForStudent(String studentName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        List<Integer> scores = new ArrayList<>();
+
+        String selection = KEY_NAME + " = ?";
+        String[] selectionArgs = {studentName};
+
+        Cursor cursor = db.query(TABLE_STUDENT, new String[]{KEY_SCORE}, selection, selectionArgs, null, null, null);
+
+        try {
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    int score = cursor.getInt(cursor.getColumnIndex(KEY_SCORE));
+                    scores.add(score);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error retrieving scores for student: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
+        }
+
+        return scores;
+    }
+
+
+
     public List<String> getStudentsForExamByName(String examName) {
         List<String> studentNames = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -244,6 +372,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_SUBJECT);
         db.execSQL(CREATE_TABLE_EXAM);
         db.execSQL(CREATE_TABLE_STUDENT);
+        db.execSQL(CREATE_TABLE_ANSWER_COMPARISON);
     }
 
     @Override
@@ -253,9 +382,75 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_SUBJECT);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXAM);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_STUDENT);
+        db.execSQL(CREATE_TABLE_ANSWER_COMPARISON);
         // create new tables
         onCreate(db);
     }
+
+
+    public void insertAnswerComparison(long examId, String studentName, byte[][] studentAnswers, int[] correctAnswers, int score) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // Insert student name and exam ID
+        values.put("exam_id", examId);
+        values.put("student_name", studentName);
+
+        // Insert each question's comparison
+        for (int i = 0; i < studentAnswers.length; i++) {
+            values.put("question_number", i + 1); // Question numbers start from 1
+            values.put("student_answer", convertByteArrayToString(studentAnswers[i]));
+            values.put("correct_answer", String.valueOf(correctAnswers[i]));
+            values.put("is_correct", studentAnswers[i].equals(correctAnswers[i]) ? 1 : 0); // Compare student's answer with correct answer
+
+            // Insert the comparison into the database
+            db.insert("answer_comparison", null, values);
+        }
+
+        // Insert total score
+        values.clear();
+        values.put("exam_id", examId);
+        values.put("student_name", studentName);
+        values.put("total_score", score);
+        db.insert("exam_scores", null, values);
+
+        db.close();
+    }
+
+    // Utility method to convert byte array to String
+    private String convertByteArrayToString(byte[] byteArray) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (byte b : byteArray) {
+            stringBuilder.append(b);
+        }
+        return stringBuilder.toString();
+    }
+
+    public List<AnswerComparisonBlock> getAllAnswerComparisonData() {
+        List<AnswerComparisonBlock> answerComparisonBlocks = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] projection = {"question_number", "student_answer", "correct_answer", "is_correct"};
+        Cursor cursor = db.query("answer_comparison", projection, null, null, null, null, null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                int questionNumber = cursor.getInt(cursor.getColumnIndex("question_number"));
+                String studentAnswer = cursor.getString(cursor.getColumnIndex("student_answer"));
+                String correctAnswer = cursor.getString(cursor.getColumnIndex("correct_answer"));
+                int isCorrectInt = cursor.getInt(cursor.getColumnIndex("is_correct"));
+                boolean isCorrect = isCorrectInt == 1;
+                answerComparisonBlocks.add(new AnswerComparisonBlock(questionNumber, studentAnswer, correctAnswer, isCorrect));
+            }
+            cursor.close();
+        }
+
+        db.close();
+
+        return answerComparisonBlocks;
+    }
+
+
 
     public ClassroomBlock insertClassroom(String name) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -284,17 +479,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return id;
     }
 
-    public void insertExam(String name, long subjectId) {
+    public void insertExam(String name, long subjectId, int numQuestions) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put(KEY_NAME, name);
         values.put("subject_id", subjectId); // Store the subject ID
+        values.put("num_questions", numQuestions); // Store the number of questions
 
         long id = db.insert(TABLE_EXAM, null, values);
 
         db.close();
-
     }
 
     @SuppressLint("Range")
@@ -354,7 +549,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             if (cursor != null) {
                 while (cursor.moveToNext()) {
-                    long examId = cursor.getLong(cursor.getColumnIndex(KEY_ID));
+                    @SuppressLint("Range")  long examId = cursor.getLong(cursor.getColumnIndex(KEY_ID));
 
                     // Delete all students associated with each exam
                     db.delete(TABLE_STUDENT, KEY_EXAM_ID + " = ?", new String[]{String.valueOf(examId)});
@@ -468,7 +663,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             cursor = db.query(TABLE_STUDENT, new String[]{KEY_ID}, selection, selectionArgs, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 // Student exists, update the name and score
-                long studentId = cursor.getLong(cursor.getColumnIndex(KEY_ID));
+                @SuppressLint("Range") long studentId = cursor.getLong(cursor.getColumnIndex(KEY_ID));
                 ContentValues values = new ContentValues();
                 values.put(KEY_NAME, selectedStudentName); // Update name
                 values.put(KEY_SCORE, score); // Update score
@@ -505,37 +700,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-
-    @SuppressLint("Range")
-    public List<Integer> getScoresForStudent(String studentName) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        List<Integer> scores = new ArrayList<>();
-
-        String selection = KEY_NAME + " = ?";
-        String[] selectionArgs = {studentName};
-
-        Cursor cursor = db.query(TABLE_STUDENT, new String[]{KEY_SCORE}, selection, selectionArgs, null, null, null);
-
-        try {
-            if (cursor != null) {
-                while (cursor.moveToNext()) {
-                    int score = cursor.getInt(cursor.getColumnIndex(KEY_SCORE));
-                    scores.add(score);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error retrieving scores for student: " + e.getMessage());
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-            if (db != null && db.isOpen()) {
-                db.close();
-            }
-        }
-
-        return scores;
-    }
 
 
 

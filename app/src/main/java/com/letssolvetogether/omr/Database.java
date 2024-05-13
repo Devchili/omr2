@@ -39,18 +39,25 @@ public class Database extends AppCompatActivity {
         }
         stringBuilder.append("\n");
 
-
-        stringBuilder.append("\n");
-
         // Get all students with their scores
         List<DatabaseHelper.StudentBlock> students = dbHelper.getAllStudentsWithScores();
         stringBuilder.append("Students and their Scores:\n");
         for (DatabaseHelper.StudentBlock student : students) {
             stringBuilder.append(student.getName()).append(": ").append(student.getScore()).append("\n");
+
+            // Retrieve student answers and correct answers
+            List<AnswerComparisonBlock> answerComparisons = dbHelper.getAllAnswerComparisonData();
+            for (AnswerComparisonBlock answerComparison : answerComparisons) {
+                stringBuilder.append("Question ").append(answerComparison.getQuestionNumber()).append(": ");
+                stringBuilder.append("Student's Answer: ").append(answerComparison.getStudentAnswer()).append(", ");
+                stringBuilder.append("Correct Answer: ").append(answerComparison.getCorrectAnswer()).append(", ");
+                stringBuilder.append("Is Correct: ").append(answerComparison.isCorrect()).append("\n");
+            }
         }
+        stringBuilder.append("\n");
 
         // Display the content in TextView
         databaseContentTextView.setText(stringBuilder.toString());
     }
-}
 
+}

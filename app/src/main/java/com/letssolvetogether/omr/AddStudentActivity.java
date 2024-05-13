@@ -1,7 +1,12 @@
 package com.letssolvetogether.omr;
 
+import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -13,6 +18,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.letssolvetogether.omr.main.R;
 
@@ -22,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 
 public class AddStudentActivity extends AppCompatActivity {
+    private static final int WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 123;
+
     private EditText editTextStudentName;
     private DatabaseHelper dbHelper;
     private List<String> studentInfoList; // List to store student name and score
@@ -35,16 +44,23 @@ public class AddStudentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_student);
 
-
+        // Retrieve exam ID and exam name from intent extras
         examId = getIntent().getLongExtra("examId", -1);
-        String examName = getIntent().getStringExtra("examName"); // Retrieve exam name
-        if (examId == -1 || examName == null) {
-            // Handle the case when examId or examName is not passed correctly
-            Toast.makeText(this, "Error: Exam ID or Exam Name not found", Toast.LENGTH_SHORT).show();
+        examName = getIntent().getStringExtra("examName");
+        String className = getIntent().getStringExtra("className"); // Retrieve class name
+        String subjectName = getIntent().getStringExtra("subjectName"); // Retrieve subject name
+
+        if (examId == -1 || examName == null || className == null || subjectName == null) {
+            // Handle the case when examId, examName, className, or subjectName is not passed correctly
+            Toast.makeText(this, "Error: Exam ID, Exam Name, Class Name, or Subject Name not found", Toast.LENGTH_SHORT).show();
             finish(); // Close the activity
             return;
         }
+
         dbHelper = new DatabaseHelper(this);
+
+        // Set the title with the class name, subject name, and exam name
+        setTitle(className + " - "+ subjectName + " - " + examName);
 
         // Display the exam name
         TextView textViewExamName = findViewById(R.id.text_view_exam_name);
@@ -102,6 +118,31 @@ public class AddStudentActivity extends AppCompatActivity {
             Toast.makeText(this, "Please enter a student name", Toast.LENGTH_SHORT).show();
         }
     }
+
+    public void exportToExcel(View view) {
+        // Check for permission to write to external storage
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted, request it
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_REQUEST_CODE);
+        } else {
+            // Permission is granted, proceed with exporting to Excel
+
+            // Retrieve classroom name, subject name, and exam name
+            String className = getIntent().getStringExtra("className");
+            String subjectName = getIntent().getStringExtra("subjectName");
+            String examName = getIntent().getStringExtra("examName");
+
+            // Check if classroom name, subject name, and exam name are not null
+            if (className != null && subjectName != null && examName != null) {
+                dbHelper.exportAllScoresToExcel(this, className, subjectName, examName);
+            } else {
+                // Handle the case when classroom name, subject name, or exam name is not found
+                Toast.makeText(this, "Error: Classroom name, subject name, or exam name not found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
 
 
     private void addStudentBlockToUI(String studentName, long examId) {

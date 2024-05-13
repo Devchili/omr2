@@ -34,7 +34,15 @@ public class Class extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_class);
 
+        Button btnOpenDatabase = findViewById(R.id.btn_open_database);
         layoutClassrooms = findViewById(R.id.list_view_classrooms);
+
+        btnOpenDatabase.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openDatabaseActivity();
+            }
+        });
 
         dbHelper = new DatabaseHelper(this);
         classroomViews = new HashMap<>();
@@ -48,6 +56,11 @@ public class Class extends AppCompatActivity {
         });
 
         loadClassroomsFromDatabase();
+    }
+
+    private void openDatabaseActivity() {
+        Intent intent = new Intent(this, Database.class);
+        startActivity(intent);
     }
 
     private void loadClassroomsFromDatabase() {
@@ -69,6 +82,7 @@ public class Class extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(Class.this, Subject.class);
                 intent.putExtra("classroomId", classroom.getId());
+                intent.putExtra("className", classroom.getName());
                 startActivity(intent);
             }
         });
